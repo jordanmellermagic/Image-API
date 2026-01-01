@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.middleware.cors import CORSMiddleware
 
 APP_DB = os.environ.get("APP_DB", "app.db")
 UPLOAD_ROOT = os.environ.get("UPLOAD_ROOT", "uploads")
@@ -73,14 +74,13 @@ def infer_extension(upload: UploadFile) -> str:
     if ext in {".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"}:
         return ext
 
-    ct = upload.content_type or ""
     return {
         "image/png": ".png",
         "image/jpeg": ".jpg",
         "image/gif": ".gif",
         "image/webp": ".webp",
         "image/bmp": ".bmp",
-    }.get(ct, ".png")
+    }.get(upload.content_type, ".png")
 
 
 # -------------------------
@@ -88,6 +88,18 @@ def infer_extension(upload: UploadFile) -> str:
 # -------------------------
 
 app = FastAPI()
+
+# ✅ REQUIRED FOR WEB APP (Render Static Site)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://imager-viewer.onrender.com",
+        "http://localhost:3000",
+        "http://localhost:8000",
+    ],
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
